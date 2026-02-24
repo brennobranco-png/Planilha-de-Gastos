@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finance Pro 2026 - Corrigido</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary: #2563eb; --success: #22c55e; --danger: #ef4444; --bg: #f8fafc; --card: #ffffff;
+        }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 20px; color: #1e293b; }
+        .container { max-width: 900px; margin: auto; }
+        .tabs { display: flex; gap: 5px; margin-bottom: 20px; background: #e2e8f0; padding: 5px; border-radius: 12px; }
+        .tab-btn { padding: 12px; border: none; background: transparent; border-radius: 8px; cursor: pointer; flex: 1; font-weight: bold; color: #64748b; }
+        .tab-btn.active { background: var(--primary); color: white; }
+        .content-section { display: none; background: var(--card); padding: 25px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .content-section.active { display: block; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        input { width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; box-sizing: border-box; }
+        .resumo-topo { display: flex; justify-content: space-between; background: #1e293b; color: white; padding: 20px; border-radius: 12px; margin-bottom: 20px; }
+        .val { font-size: 1.2em; font-weight: bold; }
+        .status-badge { padding: 10px; border-radius: 8px; text-align: center; font-weight: bold; margin-top: 10px; }
+        .azul { background: #dcfce7; color: #166534; }
+        .vermelho { background: #fee2e2; color: #991b1b; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        td, th { padding: 12px; border-bottom: 1px solid #f1f5f9; text-align: left; }
+        .btn { padding: 10px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        .btn-add { background: var(--success); color: white; width: 100%; }
+        .btn-del { background: var(--danger); color: white; padding: 5px 10px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <h2>📊 Financeiro 2026</h2>
+        <input type="month" id="mesReferencia" value="2026-01" onchange="trocarMes()" style="width: 160px;">
+    </header>
+
+    <div class="resumo-topo">
+        <div>
+            <span>Receita Líquida</span>
+            <div class="val" id="topoReceita">R$ 0,00</div>
+        </div>
+        <div>
+            <span>Total Gastos</span>
+            <div class="val" id="topoGastos">R$ 0,00</div>
+        </div>
+        <div>
+            <span>Saldo Restante</span>
+            <div class="val" id="topoRestante">R$ 0,00</div>
+        </div>
+    </div>
+    
+    <div class="tabs">
+        <button class="tab-btn active" onclick="openTab('salario')">Salário</button>
+        <button class="tab-btn" onclick="openTab('gastos')">Gastos</button>
+        <button class="tab-btn" onclick="openTab('investimentos')">Investir</button>
+        <button class="tab-btn" onclick="openTab('metas')">Metas</button>
+    </div>
+
+    <section id="salario" class="content-section active">
+        <h3>Configuração de Renda (2026)</h3>
+        <div class="grid">
+            <div><label>Salário Bruto</label><input type="number" id="bruto" oninput="salvarDados()"></div>
+            <div><label>% Adiantamento</label><input type="number" id="percVale" value="40" oninput="salvarDados()"></div>
+            <div><label>Renda Extra</label><input type="number" id="extra" oninput="salvarDados()"></div>
+        </div>
+        <div id="resumoCalculado" style="line-height: 1.6; background: #f1f5f9; padding: 15px; border-radius: 8px;"></div>
+    </section>
+
+    <section id="gastos" class="content-section">
+        <h3>Adicionar Gasto</h3>
+        <div class="grid" style="grid-template-columns: 2fr 1fr 1fr;">
+            <input type="text" id="gastoDesc" placeholder="Ex: Aluguel">
+            <input type="number" id="gastoValor" placeholder="R$">
+            <button class="btn btn-add" onclick="adicionarGasto()">Salvar Gasto</button>
+        </div>
+        <table>
+            <thead><tr><th>Descrição</th><th>Valor</th><th>Ação</th></tr></thead>
+            <tbody id="listaGastos"></tbody>
+        </table>
+        <div id="statusMes" class="status-badge"></div>
+    </section>
+
+    <section id="investimentos" class="content-section">
+        <h3>Simulador de Rendimentos</h3>
+        <p>Quanto do seu <b>saldo restante</b> você quer investir?</p>
+        <div class="grid">
+            <div><label>% para Investir</label><input type="number" id="percInv" value="100" oninput="salvarDados()"></div>
+            <div><label>Valor em R$</label><input type="text" id="valorRealInv" disabled></div>
+        </div>
+        <div class="grid">
+            <div style="background: #e0f2fe; padding: 15px; border-radius: 8px;">
+                <h4>CDB / ITCD (100% CDI)</h4>
+                <p>Rende aprox: <b>0,85% p/mês</b></p>
+                <p>Em 1 ano: <span id="rendCDB" class="val">R$ 0,00</span></p>
+            </div>
+            <div style="background: #fef3c7; padding: 15px; border-radius: 8px;">
+                <h4>Tesouro Direto (Selic)</h4>
+                <p>Rende aprox: <b>0,82% p/mês</b></p>
+                <p>Em 1 ano: <span id="rendTesouro" class="val">R$ 0,00</span></p>
+            </div>
+        </div>
+    </section>
+
+    <section id="metas" class="content-section">
+        <h3>Metas de Alto Valor</h3>
+        <div class="grid" style="grid-template-columns: 2fr 1fr 1fr 1fr;">
+            <input type="text" id="metaNome" placeholder="Ex: Carro">
+            <input type="number" id="metaTotal" placeholder="Valor Total">
+            <input type="number" id="metaMensal" placeholder="R$ p/ Mês">
+            <button class="btn btn-add" onclick="adicionarMeta()">Criar</button>
+        </div>
+        <div id="containerMetas"></div>
+    </section>
+</div>
+
+<script>
+    let db = JSON.parse(localStorage.getItem('finance_db_2026')) || { meses: {}, metas: [] };
+
+    function openTab(id) {
+        document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        event.currentTarget.classList.add('active');
+        atualizarUI();
+    }
+
+    function trocarMes() { carregarDadosMes(); }
+
+    function carregarDadosMes() {
+        const mes = document.getElementById('mesReferencia').value;
+        const d = db.meses[mes] || { bruto: 0, percVale: 40, extra: 0, gastos: [], percInv: 100 };
+        
+        document.getElementById('bruto').value = d.bruto || '';
+        document.getElementById('percVale').value = d.percVale || 40;
+        document.getElementById('extra').value = d.extra || '';
+        document.getElementById('percInv').value = d.percInv || 100;
+        
+        atualizarUI();
+    }
+
+    function salvarDados() {
+        const mes = document.getElementById('mesReferencia').value;
+        if (!db.meses[mes]) db.meses[mes] = { gastos: [] };
+        
+        db.meses[mes].bruto = parseFloat(document.getElementById('bruto').value) || 0;
+        db.meses[mes].percVale = parseFloat(document.getElementById('percVale').value) || 0;
+        db.meses[mes].extra = parseFloat(document.getElementById('extra').value) || 0;
+        db.meses[mes].percInv = parseFloat(document.getElementById('percInv').value) || 0;
+        
+        localStorage.setItem('finance_db_2026', JSON.stringify(db));
+        atualizarUI();
+    }
+
+    function atualizarUI() {
+        const mes = document.getElementById('mesReferencia').value;
+        const d = db.meses[mes] || { bruto: 0, percVale: 40, extra: 0, gastos: [], percInv: 100 };
+
+        // 1. Cálculos de Impostos (Base 2026)
+        const inss = d.bruto * 0.11;
+        const irrf = d.bruto > 2600 ? (d.bruto * 0.15) - 380 : 0;
+        const liquidoTotal = d.bruto - inss - irrf + d.extra;
+        const valorVale = d.bruto * (d.percVale / 100);
+        const salarioDia01 = liquidoTotal - valorVale;
+
+        document.getElementById('resumoCalculado').innerHTML = `
+            <b>💰 Adiantamento (Dia 15):</b> R$ ${valorVale.toLocaleString('pt-BR')}<br>
+            <b>🏦 Salário (Dia 01):</b> R$ ${salarioDia01.toLocaleString('pt-BR')} (com descontos e extra)<br>
+            <small>* Descontos estimados: INSS R$ ${inss.toFixed(2)} | IRRF R$ ${irrf.toFixed(2)}</small>
+        `;
+
+        // 2. Gastos e Saldo Restante
+        const totalGastos = d.gastos.reduce((acc, g) => acc + g.valor, 0);
+        const saldoRestante = liquidoTotal - totalGastos;
+
+        document.getElementById('topoReceita').innerText = `R$ ${liquidoTotal.toLocaleString('pt-BR')}`;
+        document.getElementById('topoGastos').innerText = `R$ ${totalGastos.toLocaleString('pt-BR')}`;
+        document.getElementById('topoRestante').innerText = `R$ ${saldoRestante.toLocaleString('pt-BR')}`;
+
+        // 3. Status Azul/Vermelho
+        const statusMes = document.getElementById('statusMes');
+        statusMes.className = "status-badge " + (saldoRestante >= 0 ? "azul" : "vermelho");
+        statusMes.innerText = saldoRestante >= 0 ? "SALDO POSITIVO" : "SALDO NEGATIVO";
+
+        // 4. Lista de Gastos
+        const lista = document.getElementById('listaGastos');
+        lista.innerHTML = d.gastos.map((g, i) => `
+            <tr><td>${g.desc}</td><td>R$ ${g.valor.toLocaleString('pt-BR')}</td>
+            <td><button class="btn-del" onclick="removerGasto(${i})">X</button></td></tr>
+        `).join('');
+
+        // 5. Investimentos
+        const valorParaInvestir = saldoRestante > 0 ? saldoRestante * (d.percInv / 100) : 0;
+        document.getElementById('valorRealInv').value = `R$ ${valorParaInvestir.toLocaleString('pt-BR')}`;
+        
+        // Simulação 1 ano (Juros Compostos Básicos)
+        const simular = (taxa) => valorParaInvestir * Math.pow((1 + taxa), 12);
+        document.getElementById('rendCDB').innerText = `R$ ${simular(0.0085).toLocaleString('pt-BR')}`;
+        document.getElementById('rendTesouro').innerText = `R$ ${simular(0.0082).toLocaleString('pt-BR')}`;
+
+        // 6. Metas
+        const containerMetas = document.getElementById('containerMetas');
+        containerMetas.innerHTML = db.metas.map((m, i) => `
+            <div style="background:#f8fafc; border:1px solid #e2e8f0; padding:15px; border-radius:10px; margin-top:10px; display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                    <b>${m.nome}</b><br>
+                    Total: R$ ${m.valor.toLocaleString('pt-BR')} | Guardando: R$ ${m.mensal}/mês<br>
+                    <small>Tempo estimado: <b>${Math.ceil(m.valor / m.mensal)} meses</b></small>
+                </div>
+                <button class="btn-del" onclick="removerMeta(${i})">Remover</button>
+            </div>
+        `).join('');
+    }
+
+    function adicionarGasto() {
+        const mes = document.getElementById('mesReferencia').value;
+        const desc = document.getElementById('gastoDesc').value;
+        const valor = parseFloat(document.getElementById('gastoValor').value);
+        if(!desc || !valor) return alert("Preencha descrição e valor!");
+        
+        if(!db.meses[mes]) db.meses[mes] = { gastos: [], bruto:0, extra:0, percVale:40, percInv:100 };
+        db.meses[mes].gastos.push({ desc, valor });
+        document.getElementById('gastoDesc').value = '';
+        document.getElementById('gastoValor').value = '';
+        salvarDados();
+    }
+
+    function removerGasto(i) {
+        db.meses[document.getElementById('mesReferencia').value].gastos.splice(i, 1);
+        salvarDados();
+    }
+
+    function adicionarMeta() {
+        const nome = document.getElementById('metaNome').value;
+        const valor = parseFloat(document.getElementById('metaTotal').value);
+        const mensal = parseFloat(document.getElementById('metaMensal').value);
+        if(!nome || !valor || !mensal) return alert("Preencha todos os campos da meta!");
+        
+        db.metas.push({ nome, valor, mensal });
+        document.getElementById('metaNome').value = '';
+        document.getElementById('metaTotal').value = '';
+        document.getElementById('metaMensal').value = '';
+        localStorage.setItem('finance_db_2026', JSON.stringify(db));
+        atualizarUI();
+    }
+
+    function removerMeta(i) {
+        db.metas.splice(i, 1);
+        localStorage.setItem('finance_db_2026', JSON.stringify(db));
+        atualizarUI();
+    }
+
+    // Inicializar
+    carregarDadosMes();
+</script>
+
+</body>
+</html>
